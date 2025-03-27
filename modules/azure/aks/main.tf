@@ -1,5 +1,5 @@
 resource "azurerm_resource_group" "main" {
-  name     = "rg-${var.cluster_name}"
+  name     = var.resource_group_name
   location = var.location
   tags     = merge(var.resource_tags, { Environment = var.environment })
 }
@@ -58,7 +58,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   kubernetes_cluster_id = azurerm_kubernetes_cluster.main.id
   vm_size              = var.node_instance_type
   node_count           = var.node_count
-  vnet_subnet_id       = var.subnet_ids[0]
+  vnet_subnet_id       = var.subnet_ids[1]
   mode                 = "User"
   enable_auto_scaling = true
   min_count           = 1

@@ -3,6 +3,11 @@ variable "cluster_name" {
   type        = string
 }
 
+variable "resource_group_name" {
+  description = "Name of the resource group to create resources in"
+  type        = string
+}
+
 variable "environment" {
   description = "Environment name"
   type        = string

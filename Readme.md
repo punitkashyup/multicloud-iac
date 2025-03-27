@@ -64,16 +64,16 @@ Initialize Terraform with the appropriate backend:
 For AWS S3 backend:
 
 ```bash
-terraform init -backend-config=../../backend/s3.tf
+terraform init -backend-config="../../backend/s3.tf"
 ```
 For Azure backend:
 ```bash
-terraform init -backend-config=../../backend/azurerm.tf
+terraform init -backend-config="../../backend/azurerm.tf"
 ```
 For local backend (not recommended for production):
 
 ```bash
-terraform init -backend-config=../../backend/local.tf
+terraform init -backend-config="../../backend/local.tf"
 ```
 
 Create and select a workspace:
@@ -88,14 +88,14 @@ Deploy the infrastructure:
 
 # For AWS
 ```bash
-terraform plan -var-file=terraform.tfvars -var="cloud_provider=aws"
-terraform apply -var-file=terraform.tfvars -var="cloud_provider=aws"
+terraform plan -var-file="terraform.tfvars" -var="cloud_provider=aws"
+terraform apply -var-file="terraform.tfvars" -var="cloud_provider=aws"
 ```
 
 # For Azure
 ```bash
-terraform plan -var-file=terraform.tfvars -var="cloud_provider=azure"
-terraform apply -var-file=terraform.tfvars -var="cloud_provider=azure"
+terraform plan -var-file="azure.tfvars" -var="cloud_provider=azure"
+terraform apply -var-file="azure.tfvars" -var="cloud_provider=azure"
 ```
 
 

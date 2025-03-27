@@ -50,6 +50,9 @@ provider "azurerm" {
 locals {
   cloud_provider = var.cloud_provider # "aws" or "azure"
   environment    = terraform.workspace != "default" ? terraform.workspace : "dev"
+  
+  # Dynamic resource group name using project_name and environment
+  resource_group_name = "rg-${var.project_name}-${local.environment}"
 }
 
 # AWS Network Module - using count conditional
@@ -68,11 +71,12 @@ module "azure_network" {
   source = "../../modules/azure/vnet"
   count  = local.cloud_provider == "azure" ? 1 : 0
   
-  name        = "${var.project_name}-${local.environment}-network"
-  cidr_block  = var.network_cidr
-  environment = local.environment
-  location    = var.azure_location
-  tags        = var.resource_tags
+  name              = "${var.project_name}-${local.environment}-network"
+  cidr_block        = var.network_cidr
+  environment       = local.environment
+  location          = var.azure_location
+  tags              = var.resource_tags
+  resource_group_name = local.resource_group_name  # Use the dynamic name based on project name
 }
 
 # AWS Kubernetes cluster - using count conditional
@@ -113,6 +117,7 @@ module "azure_kubernetes_cluster" {
   node_instance_type = var.node_instance_type
   kubernetes_version = var.kubernetes_version
   location           = var.azure_location
+  resource_group_name = local.resource_group_name  # Use the dynamic name based on project name
 }
 
 # Configure Kubernetes provider with cluster credentials

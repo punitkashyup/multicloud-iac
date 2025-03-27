@@ -8,7 +8,10 @@ variable "location" {
   type        = string
   default     = "eastus"
 }
-
+variable "resource_group_name" {
+  description = "Name of the resource group to create resources in"
+  type        = string
+}
 variable "cidr_block" {
   description = "CIDR block for the VNet"
   type        = string
