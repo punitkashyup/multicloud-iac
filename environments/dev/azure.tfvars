@@ -35,3 +35,29 @@ resource_tags = {
   CostCenter  = "IT-123"
   ManagedBy   = "Terraform"
 }
+
+# Data Services Configuration
+deploy_data_services = true
+
+# MongoDB Configuration
+mongodb_enabled = true
+mongodb_namespace = "mongodb"
+mongodb_values = {
+  "auth.username" = "admin"
+  "auth.database" = "admin"
+  "replicaCount" = "3"
+  "persistence.enabled" = "true"
+  "persistence.size" = "50Gi"
+  "metrics.enabled" = "true"
+}
+
+# Kafka Configuration
+kafka_enabled = true
+kafka_namespace = "kafka"
+kafka_values = {
+  "replicaCount" = "3"
+  "persistence.enabled" = "true"
+  "persistence.size" = "100Gi"
+  "metrics.enabled" = "true"
+  "externalAccess.enabled" = "false"  # Set to true if you need external access
+}

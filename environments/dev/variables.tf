@@ -112,3 +112,58 @@ variable "app_resource_requests" {
     memory = "256Mi"
   }
 }
+
+# Data Services Configuration
+variable "deploy_data_services" {
+  description = "Whether to deploy MongoDB and Kafka"
+  type        = bool
+  default     = true
+}
+
+variable "mongodb_enabled" {
+  description = "Whether to deploy MongoDB"
+  type        = bool
+  default     = true
+}
+
+variable "mongodb_namespace" {
+  description = "Kubernetes namespace for MongoDB"
+  type        = string
+  default     = "mongodb"
+}
+
+variable "mongodb_chart_version" {
+  description = "Version of the MongoDB Helm chart"
+  type        = string
+  default     = "13.9.2"  # Update as needed
+}
+
+variable "mongodb_values" {
+  description = "Custom values for MongoDB Helm chart"
+  type        = map(any)
+  default     = {}
+}
+
+variable "kafka_enabled" {
+  description = "Whether to deploy Kafka"
+  type        = bool
+  default     = true
+}
+
+variable "kafka_namespace" {
+  description = "Kubernetes namespace for Kafka"
+  type        = string
+  default     = "kafka"
+}
+
+variable "kafka_chart_version" {
+  description = "Version of the Kafka Helm chart"
+  type        = string
+  default     = "22.1.5"  # Update as needed
+}
+
+variable "kafka_values" {
+  description = "Custom values for Kafka Helm chart"
+  type        = map(any)
+  default     = {}
+}

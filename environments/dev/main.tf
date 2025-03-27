@@ -14,6 +14,10 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 2.0"
     }
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
   }
 
   # Backend configuration will be provided during initialization
@@ -31,9 +35,6 @@ provider "aws" {
   skip_requesting_account_id  = var.cloud_provider == "azure" ? true : false
   skip_metadata_api_check     = var.cloud_provider == "azure" ? true : false
   
-  # Optional: Set this if you want to completely skip AWS provider when using Azure
-  # alias = var.cloud_provider == "azure" ? "unused" : "default"
-
   default_tags {
     tags = {
       Environment = local.environment
@@ -76,7 +77,7 @@ module "azure_network" {
   environment       = local.environment
   location          = var.azure_location
   tags              = var.resource_tags
-  resource_group_name = local.resource_group_name  # Use the dynamic name based on project name
+  resource_group_name = local.resource_group_name
 }
 
 # AWS Kubernetes cluster - using count conditional
@@ -117,7 +118,7 @@ module "azure_kubernetes_cluster" {
   node_instance_type = var.node_instance_type
   kubernetes_version = var.kubernetes_version
   location           = var.azure_location
-  resource_group_name = local.resource_group_name  # Use the dynamic name based on project name
+  resource_group_name = local.resource_group_name
 }
 
 # Configure Kubernetes provider with cluster credentials
@@ -143,19 +144,8 @@ provider "kubernetes" {
     }
   }
 
-  dynamic "client_certificate" {
-    for_each = local.cloud_provider == "azure" && length(module.azure_kubernetes_cluster) > 0 ? [1] : []
-    content {
-      data = module.azure_kubernetes_cluster[0].client_certificate
-    }
-  }
-
-  dynamic "client_key" {
-    for_each = local.cloud_provider == "azure" && length(module.azure_kubernetes_cluster) > 0 ? [1] : []
-    content {
-      data = module.azure_kubernetes_cluster[0].client_key
-    }
-  }
+  client_certificate = local.cloud_provider == "azure" && length(module.azure_kubernetes_cluster) > 0 ? base64decode(module.azure_kubernetes_cluster[0].client_certificate) : null
+  client_key = local.cloud_provider == "azure" && length(module.azure_kubernetes_cluster) > 0 ? base64decode(module.azure_kubernetes_cluster[0].client_key) : null
 }
 
 # Configure Helm provider with cluster credentials
@@ -182,37 +172,69 @@ provider "helm" {
       }
     }
 
-    dynamic "client_certificate" {
-      for_each = local.cloud_provider == "azure" && length(module.azure_kubernetes_cluster) > 0 ? [1] : []
-      content {
-        data = module.azure_kubernetes_cluster[0].client_certificate
-      }
-    }
-
-    dynamic "client_key" {
-      for_each = local.cloud_provider == "azure" && length(module.azure_kubernetes_cluster) > 0 ? [1] : []
-      content {
-        data = module.azure_kubernetes_cluster[0].client_key
-      }
-    }
+    client_certificate = local.cloud_provider == "azure" && length(module.azure_kubernetes_cluster) > 0 ? base64decode(module.azure_kubernetes_cluster[0].client_certificate) : null
+    client_key = local.cloud_provider == "azure" && length(module.azure_kubernetes_cluster) > 0 ? base64decode(module.azure_kubernetes_cluster[0].client_key) : null
   }
 }
 
-# module "application_deployment" {
-#   source = "../../modules/kubernetes/app-deployment"
+# Add Helm charts for MongoDB and Kafka
+module "data_services" {
+  source = "../../modules/kubernetes/helm-charts"
   
-#   depends_on = [
-#     module.aws_kubernetes_cluster,
-#     module.azure_kubernetes_cluster
-#   ]
+  count = var.deploy_data_services ? 1 : 0
   
-#   app_name             = var.app_name
-#   app_version          = var.app_version
-#   app_replicas         = var.app_replicas
-#   app_container_image  = var.app_container_image
-#   app_container_port   = var.app_container_port
-#   environment          = local.environment
-#   namespace            = var.kubernetes_namespace
-#   resource_limits      = var.app_resource_limits
-#   resource_requests    = var.app_resource_requests
-# }
+  depends_on = [
+    module.aws_kubernetes_cluster,
+    module.azure_kubernetes_cluster
+  ]
+  
+  environment      = local.environment
+  create_namespace = true
+  
+  # MongoDB configuration
+  mongodb_enabled     = var.mongodb_enabled
+  mongodb_namespace   = var.mongodb_namespace
+  mongodb_chart_version = var.mongodb_chart_version
+  mongodb_values      = var.mongodb_values
+  
+  # Kafka configuration
+  kafka_enabled      = var.kafka_enabled
+  kafka_namespace    = var.kafka_namespace
+  kafka_chart_version = var.kafka_chart_version
+  kafka_values       = var.kafka_values
+}
+
+# Output cluster information
+output "kubernetes_cluster_endpoint" {
+  description = "The endpoint for the Kubernetes API server"
+  value = local.cloud_provider == "aws" ? (
+    length(module.aws_kubernetes_cluster) > 0 ? module.aws_kubernetes_cluster[0].endpoint : null
+  ) : (
+    length(module.azure_kubernetes_cluster) > 0 ? module.azure_kubernetes_cluster[0].host : null
+  )
+  sensitive = true
+}
+
+output "kubernetes_cluster_name" {
+  description = "The name of the Kubernetes cluster"
+  value = local.cloud_provider == "aws" ? (
+    length(module.aws_kubernetes_cluster) > 0 ? module.aws_kubernetes_cluster[0].cluster_name : null
+  ) : (
+    length(module.azure_kubernetes_cluster) > 0 ? module.azure_kubernetes_cluster[0].cluster_name : null
+  )
+}
+
+output "resource_group_name" {
+  description = "The name of the resource group (Azure only)"
+  value = local.cloud_provider == "azure" ? local.resource_group_name : null
+}
+
+output "mongodb_connection_string" {
+  description = "MongoDB connection string"
+  value = var.deploy_data_services && var.mongodb_enabled && length(module.data_services) > 0 ? module.data_services[0].mongodb_connection_string : null
+}
+
+output "kafka_bootstrap_servers" {
+  description = "Kafka bootstrap servers"
+  value = var.deploy_data_services && var.kafka_enabled && length(module.data_services) > 0 ? module.data_services[0].kafka_bootstrap_servers : null
+}
