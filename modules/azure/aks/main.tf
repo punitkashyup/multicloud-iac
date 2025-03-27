@@ -16,6 +16,7 @@ resource "azurerm_kubernetes_cluster" "main" {
     node_count          = var.node_count
     vm_size             = var.node_instance_type
     vnet_subnet_id      = var.subnet_ids[0]
+    enable_auto_scaling = true
     min_count           = 1
     max_count           = var.node_count * 2
     max_pods            = 100
@@ -59,6 +60,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
   node_count           = var.node_count
   vnet_subnet_id       = var.subnet_ids[0]
   mode                 = "User"
+  enable_auto_scaling = true
   min_count           = 1
   max_count           = var.node_count * 2
   max_pods            = 100

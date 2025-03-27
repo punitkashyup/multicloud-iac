@@ -52,13 +52,11 @@ variable "node_count" {
 variable "node_instance_type" {
   description = "Instance type for Kubernetes nodes"
   type        = string
-  default     = "t3.medium" # For AWS; Azure will map to an equivalent size
 }
 
 variable "kubernetes_version" {
   description = "Version of Kubernetes to use"
   type        = string
-  default     = "1.26"
 }
 
 variable "kubernetes_namespace" {

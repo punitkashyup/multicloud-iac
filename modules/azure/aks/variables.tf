@@ -28,13 +28,11 @@ variable "subnet_ids" {
 variable "node_count" {
   description = "Number of nodes in the Kubernetes cluster"
   type        = number
-  default     = 2
 }
 
 variable "node_instance_type" {
   description = "VM size for Kubernetes nodes"
   type        = string
-  default     = "Standard_D2s_v3"
 }
 
 variable "kubernetes_version" {

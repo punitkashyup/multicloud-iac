@@ -1,10 +1,7 @@
 terraform {
   required_version = ">= 1.0.0"
   required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.0"
-    }
+    # Always include base providers
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 3.0"
@@ -25,8 +22,17 @@ terraform {
   # backend "local" {}
 }
 
+# Configure AWS provider only when needed
 provider "aws" {
   region = var.aws_region
+
+  # Skip AWS provider configuration when using Azure
+  skip_credentials_validation = var.cloud_provider == "azure" ? true : false
+  skip_requesting_account_id  = var.cloud_provider == "azure" ? true : false
+  skip_metadata_api_check     = var.cloud_provider == "azure" ? true : false
+  
+  # Optional: Set this if you want to completely skip AWS provider when using Azure
+  # alias = var.cloud_provider == "azure" ? "unused" : "default"
 
   default_tags {
     tags = {
