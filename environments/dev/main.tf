@@ -181,7 +181,7 @@ provider "helm" {
 module "data_services" {
   source = "../../modules/kubernetes/helm-charts"
   
-  count = var.deploy_data_services ? 1 : 0
+  count = 1
   
   depends_on = [
     module.aws_kubernetes_cluster,
@@ -202,6 +202,20 @@ module "data_services" {
   kafka_namespace    = var.kafka_namespace
   kafka_chart_version = var.kafka_chart_version
   kafka_values       = var.kafka_values
+  
+  # Nginx Ingress Controller
+  nginx_ingress_enabled = var.nginx_ingress_enabled
+  nginx_ingress_namespace = "ingress-nginx"
+  nginx_ingress_chart_version = var.nginx_ingress_chart_version
+  
+  nginx_ingress_values = {
+    "controller.service.annotations.cloud-provider" = local.cloud_provider
+  }
+  
+  # Cert Manager
+  cert_manager_enabled = var.cert_manager_enabled
+  cert_manager_namespace = "cert-manager"
+  cert_manager_chart_version = var.cert_manager_chart_version
 }
 
 # Output cluster information
@@ -237,4 +251,9 @@ output "mongodb_connection_string" {
 output "kafka_bootstrap_servers" {
   description = "Kafka bootstrap servers"
   value = var.deploy_data_services && var.kafka_enabled && length(module.data_services) > 0 ? module.data_services[0].kafka_bootstrap_servers : null
+}
+
+output "nginx_ingress_endpoint" {
+  description = "The endpoint for the Nginx Ingress Controller"
+  value = var.nginx_ingress_enabled && length(module.data_services) > 0 ? module.data_services[0].nginx_ingress_controller_endpoint : null
 }

@@ -167,3 +167,25 @@ variable "kafka_values" {
   type        = map(any)
   default     = {}
 }
+
+variable "nginx_ingress_enabled" {
+  description = "Whether to deploy Nginx Ingress Controller"
+  type        = bool
+  default     = false
+}
+
+variable "nginx_ingress_chart_version" {
+  description = "Version of the Nginx Ingress Controller Helm chart"
+  type        = string
+}
+
+variable "cert_manager_enabled" {
+  description = "Whether to deploy Cert Manager"
+  type        = bool
+  default     = false
+}
+
+variable "cert_manager_chart_version" {
+  description = "Version of the Cert Manager Helm chart"
+  type        = string
+}

@@ -56,3 +56,51 @@ variable "kafka_enabled" {
   type        = bool
   default     = true
 }
+# Nginx Ingress Controller variables
+variable "nginx_ingress_enabled" {
+  description = "Whether to deploy Nginx Ingress Controller"
+  type        = bool
+  default     = false
+}
+
+variable "nginx_ingress_namespace" {
+  description = "Kubernetes namespace for Nginx Ingress Controller"
+  type        = string
+  default     = "ingress-nginx"
+}
+
+variable "nginx_ingress_chart_version" {
+  description = "Version of the Nginx Ingress Helm chart"
+  type        = string
+  default     = "4.7.1"  # Update to the latest stable version as needed
+}
+
+variable "nginx_ingress_values" {
+  description = "Custom values for Nginx Ingress Helm chart"
+  type        = map(any)
+  default     = {}
+}
+
+# Cert Manager variables
+variable "cert_manager_enabled" {
+  description = "Whether to deploy Cert Manager"
+  type        = bool
+  default     = false
+}
+
+variable "cert_manager_namespace" {
+  description = "Kubernetes namespace for Cert Manager"
+  type        = string
+  default     = "cert-manager"
+}
+
+variable "cert_manager_chart_version" {
+  description = "Version of the Cert Manager Helm chart"
+  type        = string
+}
+
+variable "cert_manager_values" {
+  description = "Custom values for Cert Manager Helm chart"
+  type        = map(any)
+  default     = {}
+}

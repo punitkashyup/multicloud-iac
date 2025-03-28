@@ -17,3 +17,14 @@ output "zookeeper_connect_string" {
   description = "Zookeeper connection string"
   value       = var.kafka_enabled ? "${helm_release.kafka[0].name}-zookeeper.${var.kafka_namespace}.svc.cluster.local:2181" : null
 }
+
+output "nginx_ingress_controller_endpoint" {
+  description = "The endpoint for the Nginx Ingress Controller"
+  value       = var.nginx_ingress_enabled ? "Use 'kubectl get svc -n ${var.nginx_ingress_namespace} nginx-ingress-controller' to get the external IP" : null
+  depends_on  = [helm_release.nginx_ingress]
+}
+
+output "cert_manager_installed" {
+  description = "Whether Cert Manager was installed"
+  value       = var.cert_manager_enabled
+}

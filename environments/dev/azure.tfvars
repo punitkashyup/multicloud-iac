@@ -61,3 +61,8 @@ kafka_values = {
   "metrics.enabled" = "true"
   "externalAccess.enabled" = "false"  # Set to true if you need external access
 }
+
+nginx_ingress_enabled = true
+nginx_ingress_chart_version = "11.6.12"
+cert_manager_enabled = true
+cert_manager_chart_version = "1.17.1"

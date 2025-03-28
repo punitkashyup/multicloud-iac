@@ -135,3 +135,122 @@ resource "helm_release" "kafka" {
     }
   }
 }
+
+# Create namespaces if enabled
+resource "kubernetes_namespace" "nginx_ingress" {
+  count = var.create_namespace && var.nginx_ingress_enabled ? 1 : 0
+
+  metadata {
+    name = var.nginx_ingress_namespace
+    
+    labels = {
+      name = var.nginx_ingress_namespace
+      environment = var.environment
+      "app.kubernetes.io/managed-by" = "terraform"
+    }
+  }
+}
+
+resource "kubernetes_namespace" "cert_manager" {
+  count = var.create_namespace && var.cert_manager_enabled ? 1 : 0
+
+  metadata {
+    name = var.cert_manager_namespace
+    
+    labels = {
+      name = var.cert_manager_namespace
+      environment = var.environment
+      "app.kubernetes.io/managed-by" = "terraform"
+    }
+  }
+}
+
+# Deploy Nginx web server# Deploy Nginx Ingress Controller
+resource "helm_release" "nginx_ingress" {
+  count      = var.nginx_ingress_enabled ? 1 : 0
+  depends_on = [kubernetes_namespace.nginx_ingress]
+
+  name       = "nginx-ingress"
+  repository = "oci://registry-1.docker.io/bitnamicharts"
+  chart      = "nginx-ingress-controller"
+  version    = var.nginx_ingress_chart_version
+  namespace  = var.nginx_ingress_namespace
+
+  # Default values with sensible Nginx Ingress configuration
+  # set {
+  #   name  = "controller.replicaCount"
+  #   value = var.environment == "prod" ? 3 : 1
+  # }
+
+  set {
+    name  = "controller.metrics.enabled"
+    value = "true"
+  }
+
+  set {
+    name  = "controller.metrics.serviceMonitor.enabled"
+    value = "false"
+  }
+
+  # Set resource limits based on environment
+  set {
+    name  = "controller.resources.requests.memory"
+    value = var.environment == "prod" ? "256Mi" : "128Mi"
+  }
+
+  set {
+    name  = "controller.resources.requests.cpu"
+    value = var.environment == "prod" ? "100m" : "50m"
+  }
+
+  # Apply any custom values provided
+  dynamic "set" {
+    for_each = var.nginx_ingress_values
+    content {
+      name  = set.key
+      value = set.value
+    }
+  }
+}
+
+# Deploy Cert Manager
+resource "helm_release" "cert_manager" {
+  count      = var.cert_manager_enabled ? 1 : 0
+  depends_on = [kubernetes_namespace.cert_manager]
+
+  name       = "cert-manager"
+  repository = "https://charts.jetstack.io"
+  chart      = "cert-manager"
+  version    = var.cert_manager_chart_version
+  namespace  = var.cert_manager_namespace
+  set {
+    name  = "installCRDs"
+    value = "true"
+  }
+
+  # Enable prometheus metrics
+  set {
+    name  = "prometheus.enabled"
+    value = "true"
+  }
+
+  # Set resource limits based on environment
+  set {
+    name  = "resources.requests.memory"
+    value = var.environment == "prod" ? "256Mi" : "128Mi"
+  }
+
+  set {
+    name  = "resources.requests.cpu"
+    value = var.environment == "prod" ? "100m" : "50m"
+  }
+
+  # Apply any custom values provided
+  dynamic "set" {
+    for_each = var.cert_manager_values
+    content {
+      name  = set.key
+      value = set.value
+    }
+  }
+}
