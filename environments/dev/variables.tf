@@ -189,3 +189,65 @@ variable "cert_manager_chart_version" {
   description = "Version of the Cert Manager Helm chart"
   type        = string
 }
+
+# Monitoring Configuration
+variable "monitoring_enabled" {
+  description = "Whether to deploy the monitoring stack"
+  type        = bool
+  default     = true
+}
+
+variable "monitoring_namespace" {
+  description = "Kubernetes namespace for monitoring components"
+  type        = string
+  default     = "monitoring"
+}
+
+variable "grafana_admin_password" {
+  description = "Grafana admin password"
+  type        = string
+  sensitive   = true
+  default     = "prom-operator" # Not secure - use secrets management in production
+}
+
+variable "prometheus_retention_time" {
+  description = "Prometheus data retention period"
+  type        = string
+  default     = "10d"
+}
+
+variable "prometheus_storage_size" {
+  description = "Prometheus storage size"
+  type        = string
+  default     = "100Gi"
+}
+
+variable "alert_manager_storage_size" {
+  description = "AlertManager storage size"
+  type        = string
+  default     = "10Gi"
+}
+
+variable "slack_webhook_url" {
+  description = "Slack webhook URL for alerts"
+  type        = string
+  default     = ""
+  sensitive   = true
+}
+
+variable "email_to" {
+  description = "Email address to send alerts to"
+  type        = string
+  default     = ""
+}
+
+variable "monitoring_chart_version" {
+  description = "Version of the kube-prometheus-stack Helm chart"
+  type        = string
+  default     = "45.7.1"
+}
+variable "base_domain" {
+  description = "Base domain for ingress hostnames"
+  type        = string
+  default     = "example.com"  # Change this to your default domain
+}

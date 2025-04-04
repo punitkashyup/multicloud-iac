@@ -66,3 +66,12 @@ nginx_ingress_enabled = true
 nginx_ingress_chart_version = "11.6.12"
 cert_manager_enabled = true
 cert_manager_chart_version = "1.17.1"
+
+# Monitoring Configuration
+monitoring_enabled = true
+prometheus_retention_time = "7d"
+prometheus_storage_size = "50Gi"
+alert_manager_storage_size = "5Gi"
+monitoring_chart_version = "45.7.1"
+email_to = "punit.kumar@techdome.net.in"
+base_domain = "example.com"
