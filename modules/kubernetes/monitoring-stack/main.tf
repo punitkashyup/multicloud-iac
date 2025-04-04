@@ -95,6 +95,46 @@ locals {
     }
     receivers = local.all_receivers
   }
+  
+  # Define service monitors directly in Helm values
+  service_monitors = [
+    {
+      name = "mongodb-metrics"
+      selector = {
+        matchLabels = {
+          app = "mongodb"
+        }
+      }
+      namespaceSelector = {
+        any = true
+      }
+      endpoints = [
+        {
+          port = "metrics"
+          interval = "30s"
+          path = "/metrics"
+        }
+      ]
+    },
+    {
+      name = "kafka-metrics"
+      selector = {
+        matchLabels = {
+          app = "kafka"
+        }
+      }
+      namespaceSelector = {
+        any = true
+      }
+      endpoints = [
+        {
+          port = "metrics"
+          interval = "30s"
+          path = "/metrics"
+        }
+      ]
+    }
+  ]
 }
 
 resource "helm_release" "kube_prometheus_stack" {
@@ -105,229 +145,102 @@ resource "helm_release" "kube_prometheus_stack" {
   namespace  = var.create_namespace ? kubernetes_namespace.monitoring[0].metadata[0].name : var.monitoring_namespace
   timeout    = 600
 
-  # Essential components
-  set {
-    name  = "prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues"
-    value = "false"
-  }
-
-  set {
-    name  = "prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues" 
-    value = "false"
-  }
-
-  # Storage configuration
-  set {
-    name  = "prometheus.prometheusSpec.retention"
-    value = var.prometheus_retention_time
-  }
-  set {
-    name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.accessModes[0]"
-    value = "ReadWriteOnce"
-  }
-
-  set {
-    name  = "prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage"
-    value = var.prometheus_storage_size
-  }
-
-  # Grafana configuration
-  set {
-    name  = "grafana.adminPassword"
-    value = var.grafana_admin_password
-  }
-
-  set {
-    name  = "grafana.persistence.enabled"
-    value = "true"
-  }
-
-  set {
-    name  = "grafana.persistence.size"
-    value = "10Gi"
-  }
-
-  # Configure default dashboards
-  set {
-    name  = "grafana.defaultDashboardsEnabled"
-    value = "true"
-  }
-
-  # Node Exporter configuration
-  set {
-    name  = "nodeExporter.enabled"
-    value = var.enable_node_exporter
-  }
-
-  # Kube State Metrics configuration
-  set {
-    name  = "kubeStateMetrics.enabled"
-    value = var.enable_kube_state_metrics
-  }
-
-  # Alertmanager configuration
-  set {
-    name  = "alertmanager.enabled"
-    value = var.enable_alertmanager
-  }
-
-  set {
-    name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.accessModes[0]"
-    value = "ReadWriteOnce"
-  }
-
-  set {
-    name  = "alertmanager.alertmanagerSpec.storage.volumeClaimTemplate.spec.resources.requests.storage"
-    value = var.alert_manager_storage_size
-  }
-
-  # Configure AlertManager with constructed config
-  set {
-    name  = "alertmanager.config"
-    value = yamlencode(local.final_alertmanager_config)
-  }
-
-  # Configure Grafana Ingress if enabled
-  dynamic "set" {
-    for_each = var.grafana_ingress_enabled ? [1] : []
-    content {
-      name  = "grafana.ingress.enabled"
-      value = "true"
-    }
-  }
-
-  dynamic "set" {
-    for_each = var.grafana_ingress_enabled ? [1] : []
-    content {
-      name  = "grafana.ingress.hosts[0]"
-      value = var.grafana_ingress_host
-    }
-  }
-
-  # Configure Prometheus Ingress if enabled
-  dynamic "set" {
-    for_each = var.prometheus_ingress_enabled ? [1] : []
-    content {
-      name  = "prometheus.ingress.enabled"
-      value = "true"
-    }
-  }
-
-  dynamic "set" {
-    for_each = var.prometheus_ingress_enabled ? [1] : []
-    content {
-      name  = "prometheus.ingress.hosts[0]"
-      value = var.prometheus_ingress_host
-    }
-  }
-
-  # Set additional scrape configs if provided
-  set {
-    name  = "prometheus.prometheusSpec.additionalScrapeConfigsEnabled"
-    value = length(var.additional_scrape_configs) > 0 ? "true" : "false"
-  }
-
-  dynamic "set" {
-    for_each = length(var.additional_scrape_configs) > 0 ? [1] : []
-    content {
-      name  = "prometheus.prometheusSpec.additionalScrapeConfigs"
-      value = yamlencode(var.additional_scrape_configs)
-    }
-  }
-
-  # Add custom alert rules if provided
-  dynamic "set" {
-    for_each = var.alert_rules
-    content {
-      name  = "prometheus.prometheusSpec.additionalRuleGroups[0].name"
-      value = "custom-rules"
-    }
-  }
-
-  dynamic "set" {
-    for_each = var.alert_rules
-    content {
-      name  = "prometheus.prometheusSpec.additionalRuleGroups[0].rules"
-      value = yamlencode(var.alert_rules)
-    }
-  }
-
-  # Apply any additional custom values provided
-  dynamic "set" {
-    for_each = var.monitoring_chart_values
-    content {
-      name  = set.key
-      value = set.value
-    }
-  }
-}
-
-# ServiceMonitor for MongoDB
-resource "kubernetes_manifest" "mongodb_service_monitor" {
-  count = var.create_namespace ? 1 : 0
-  depends_on = [helm_release.kube_prometheus_stack]
-
-  manifest = {
-    apiVersion = "monitoring.coreos.com/v1"
-    kind       = "ServiceMonitor"
-    metadata = {
-      name      = "mongodb-metrics"
-      namespace = kubernetes_namespace.monitoring[0].metadata[0].name
-      labels = {
-        release = "kube-prometheus"
-      }
-    }
-    spec = {
-      endpoints = [
-        {
-          port     = "metrics"
-          interval = "30s"
-          path     = "/metrics"
+  # Combine all values into a single values block using yamlencode
+  values = [
+    yamlencode({
+      # Add ServiceMonitors to monitor MongoDB and Kafka
+      additionalServiceMonitors = local.service_monitors
+      
+      # Prometheus configuration
+      prometheus = {
+        prometheusSpec = {
+          # Essential configurations
+          serviceMonitorSelectorNilUsesHelmValues = false
+          podMonitorSelectorNilUsesHelmValues = false
+          
+          # Storage configuration
+          retention = var.prometheus_retention_time
+          storageSpec = {
+            volumeClaimTemplate = {
+              spec = {
+                accessModes = ["ReadWriteOnce"]
+                resources = {
+                  requests = {
+                    storage = var.prometheus_storage_size
+                  }
+                }
+              }
+            }
+          }
+          
+          # Add custom alert rules if provided
+          additionalRuleGroups = length(var.alert_rules) > 0 ? [
+            {
+              name = "custom-rules"
+              rules = values(var.alert_rules)
+            }
+          ] : []
+          
+          # Add scrape configs if provided
+          additionalScrapeConfigsEnabled = length(var.additional_scrape_configs) > 0
+          additionalScrapeConfigs = length(var.additional_scrape_configs) > 0 ? var.additional_scrape_configs : []
         }
-      ]
-      selector = {
-        matchLabels = {
-          app = "mongodb"
+        
+        # Configure Prometheus Ingress if enabled
+        ingress = {
+          enabled = var.prometheus_ingress_enabled
+          hosts = var.prometheus_ingress_enabled ? [var.prometheus_ingress_host] : []
         }
       }
-      namespaceSelector = {
-        any = true
-      }
-    }
-  }
-}
-
-# ServiceMonitor for Kafka
-resource "kubernetes_manifest" "kafka_service_monitor" {
-  count = var.create_namespace ? 1 : 0
-  depends_on = [helm_release.kube_prometheus_stack]
-
-  manifest = {
-    apiVersion = "monitoring.coreos.com/v1"
-    kind       = "ServiceMonitor"
-    metadata = {
-      name      = "kafka-metrics"
-      namespace = kubernetes_namespace.monitoring[0].metadata[0].name
-      labels = {
-        release = "kube-prometheus"
-      }
-    }
-    spec = {
-      endpoints = [
-        {
-          port     = "metrics"
-          interval = "30s"
-          path     = "/metrics"
+      
+      # Grafana configuration
+      grafana = {
+        adminPassword = var.grafana_admin_password
+        persistence = {
+          enabled = true
+          size = "10Gi"
         }
-      ]
-      selector = {
-        matchLabels = {
-          app = "kafka"
+        defaultDashboardsEnabled = true
+        
+        # Configure Grafana Ingress if enabled
+        ingress = {
+          enabled = var.grafana_ingress_enabled
+          hosts = var.grafana_ingress_enabled ? [var.grafana_ingress_host] : []
         }
       }
-      namespaceSelector = {
-        any = true
+      
+      # Node Exporter configuration
+      nodeExporter = {
+        enabled = var.enable_node_exporter
       }
-    }
-  }
+      
+      # Kube State Metrics configuration
+      kubeStateMetrics = {
+        enabled = var.enable_kube_state_metrics
+      }
+      
+      # Alertmanager configuration
+      alertmanager = {
+        enabled = var.enable_alertmanager
+        config = local.final_alertmanager_config
+        alertmanagerSpec = {
+          storage = {
+            volumeClaimTemplate = {
+              spec = {
+                accessModes = ["ReadWriteOnce"]
+                resources = {
+                  requests = {
+                    storage = var.alert_manager_storage_size
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }),
+    
+    # Add any additional custom values
+    yamlencode(var.monitoring_chart_values)
+  ]
 }
