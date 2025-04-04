@@ -11,6 +11,7 @@ resource "kubernetes_namespace" "monitoring" {
   }
 }
 
+# Add local variable for MongoDB service monitor
 locals {
   # Default alerting configuration
   default_alertmanager_config = {
@@ -96,23 +97,28 @@ locals {
     receivers = local.all_receivers
   }
   
-  # Define service monitors directly in Helm values
+  # Define service monitors directly in Helm values - Updated with more precise selectors
   service_monitors = [
     {
       name = "mongodb-metrics"
+      # More specific label selectors for MongoDB metrics service
       selector = {
         matchLabels = {
-          app = "mongodb"
+          "app.kubernetes.io/name" = "mongodb"
         }
       }
+      # Specify which namespace to monitor
       namespaceSelector = {
-        any = true
+        any = true  # Monitor MongoDB in any namespace
       }
       endpoints = [
         {
+          # Port name that matches the metrics service port
           port = "metrics"
           interval = "30s"
           path = "/metrics"
+          # Handle TLS if needed
+          scheme = "http"
         }
       ]
     },
@@ -120,11 +126,11 @@ locals {
       name = "kafka-metrics"
       selector = {
         matchLabels = {
-          app = "kafka"
+          "app.kubernetes.io/name" = "kafka"
         }
       }
       namespaceSelector = {
-        any = true
+        any = true  # Monitor Kafka in any namespace
       }
       endpoints = [
         {
@@ -135,6 +141,15 @@ locals {
       ]
     }
   ]
+  
+  # Define MongoDB job name for dashboard queries
+  mongodb_job_name = "mongodb-metrics"
+  
+  # MongoDB metric prefix based on exporter version (may vary)
+  mongodb_metric_prefix = "mongodb_"
+  
+  # Is this a single node or replica set deployment?
+  mongodb_type = "replicaset"  # or "standalone"
 }
 
 resource "helm_release" "kube_prometheus_stack" {
@@ -173,6 +188,10 @@ resource "helm_release" "kube_prometheus_stack" {
             }
           }
           
+          # Ensure service monitors from all namespaces are discovered
+          serviceMonitorNamespaceSelector = {}
+          serviceMonitorSelector = {}
+          
           # Add custom alert rules if provided
           additionalRuleGroups = length(var.alert_rules) > 0 ? [
             {
@@ -201,6 +220,15 @@ resource "helm_release" "kube_prometheus_stack" {
           size = "10Gi"
         }
         defaultDashboardsEnabled = true
+        
+        # Enable dashboard sidecar to discover ConfigMaps with dashboards
+        sidecar = {
+          dashboards = {
+            enabled = true
+            label = "grafana_dashboard"
+            searchNamespace = "ALL"
+          }
+        }
         
         # Configure Grafana Ingress if enabled
         ingress = {
@@ -243,4 +271,56 @@ resource "helm_release" "kube_prometheus_stack" {
     # Add any additional custom values
     yamlencode(var.monitoring_chart_values)
   ]
+}
+
+# Debugging resource for MongoDB metrics
+resource "null_resource" "debug_prometheus_mongodb" {
+  depends_on = [helm_release.kube_prometheus_stack]
+
+  # Only run in non-production environments
+  count = var.environment == "prod" ? 0 : 1
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "==============================================="
+      echo "MONITORING STACK DEBUGGING INFO"
+      echo "==============================================="
+      echo "Checking MongoDB metrics service in all namespaces..."
+      kubectl get svc --all-namespaces -l app.kubernetes.io/name=mongodb --show-labels
+      
+      echo "Checking MongoDB metrics endpoints in all namespaces..."
+      kubectl get endpoints --all-namespaces -l app.kubernetes.io/name=mongodb
+      
+      echo "Checking service monitors..."
+      kubectl get servicemonitor -n \${var.monitoring_namespace}
+      
+      echo "Checking Prometheus configuration..."
+      kubectl get prometheuses -n \${var.monitoring_namespace} kube-prometheus-prometheus -o jsonpath='{.spec.serviceMonitorSelector}'
+      
+      echo "==============================================="
+      echo "If services exist but no metrics are showing, check:"
+      echo "1. MongoDB metrics exporter is enabled"
+      echo "2. ServiceMonitor selectors match service labels"
+      echo "3. Prometheus is configured to discover the ServiceMonitor"
+      echo "==============================================="
+    EOT
+  }
+}
+
+# Create ConfigMap for MongoDB Dashboard using an external file
+resource "kubernetes_config_map" "mongodb_dashboard" {
+  metadata {
+    name      = "mongodb-performance-dashboard"
+    namespace = var.create_namespace ? kubernetes_namespace.monitoring[0].metadata[0].name : var.monitoring_namespace
+    labels = {
+      # These labels are important for Grafana to discover dashboards
+      grafana_dashboard = "1"
+    }
+  }
+
+  data = {
+    "mongodb-performance-dashboard.json" = file("${path.module}/mongodb-performance-dashboard.json")
+  }
+
+  depends_on = [helm_release.kube_prometheus_stack]
 }

@@ -118,3 +118,14 @@ variable "enable_kube_state_metrics" {
   type        = bool
   default     = true
 }
+variable "mongodb_namespace" {
+  description = "Kubernetes namespace where MongoDB is deployed"
+  type        = string
+  default     = "mongodb"
+}
+
+variable "kafka_namespace" {
+  description = "Kubernetes namespace where Kafka is deployed"
+  type        = string
+  default     = "kafka"
+}

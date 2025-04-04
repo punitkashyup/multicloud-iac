@@ -27,6 +27,28 @@ resource "kubernetes_namespace" "kafka" {
   }
 }
 
+
+## Mongo password
+resource "random_password" "mongodb_password" {
+  length  = 16
+  special = false
+}
+
+resource "kubernetes_secret" "mongodb_passwords" {
+  metadata {
+    name      = "mongodb-auth"
+    namespace = var.mongodb_namespace
+  }
+
+  data = {
+    mongodb-passwords      = random_password.mongodb_password.result
+    mongodb-root-password   = random_password.mongodb_password.result
+    mongodb-metrics-password = random_password.mongodb_password.result
+  }
+
+  type = "Opaque"
+}
+
 # Add MongoDB Helm repository
 resource "helm_release" "mongodb" {
   count      = var.mongodb_enabled ? 1 : 0
@@ -69,6 +91,92 @@ resource "helm_release" "mongodb" {
   set {
     name  = "resources.requests.cpu"
     value = var.environment == "prod" ? "500m" : "250m"
+  }
+
+  # Enable metrics
+  set {
+    name  = "metrics.enabled"
+    value = "true"
+  }
+
+    set {
+    name  = "metrics.username"
+    value = "root"
+  }
+  set {
+    name  = "auth.existingSecret"
+    value = kubernetes_secret.mongodb_passwords.metadata[0].name
+  }
+
+  # Prometheus ServiceMonitor configuration
+  set {
+    name  = "metrics.serviceMonitor.enabled"
+    value = "true"
+  }
+
+  # Tell Prometheus which endpoints to scrape
+  set {
+    name  = "metrics.serviceMonitor.path"
+    value = "/metrics"
+  }
+
+  # Match Prometheus operator labels
+  set {
+    name  = "metrics.serviceMonitor.additionalLabels.release"
+    value = "kube-prometheus"
+  }
+
+  # Make sure metrics port is named appropriately
+  set {
+    name  = "metrics.service.port"
+    value = "9216"
+  }
+
+  set {
+    name  = "metrics.service.annotations.prometheus\\.io/port"
+    value = "9216"
+  }
+
+  set {
+    name  = "metrics.service.annotations.prometheus\\.io/scrape"
+    value = "true"
+  }
+
+  # Configure metrics exporter
+  set {
+    name  = "metrics.extraFlags"
+    value = "{--collect.database,--collect.collection,--collect.topmetrics,--collect.indexusage,--collect.connpoolstats}"
+  }
+  # These annotations help Prometheus discover the metrics endpoint
+  set {
+    name  = "metrics.serviceAnnotations.prometheus\\.io/scrape"
+    value = "true"
+  }
+
+  set {
+    name  = "metrics.serviceAnnotations.prometheus\\.io/port"
+    value = "9216"
+  }
+
+  # You might need different resources based on your environment
+  set {
+    name  = "metrics.resources.requests.cpu"
+    value = "100m"
+  }
+
+  set {
+    name  = "metrics.resources.requests.memory"
+    value = "128Mi"
+  }
+
+  set {
+    name  = "metrics.livenessProbe.enabled"
+    value = "true"
+  }
+
+  set {
+    name  = "metrics.readinessProbe.enabled"
+    value = "true"
   }
 
   # Apply any custom values provided
