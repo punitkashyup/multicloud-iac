@@ -21,7 +21,7 @@
       }
     ]
   },
-  "description": "MongoDB CPU and Memory usage dashboard - Updated version",
+  "description": "MongoDB Performance Dashboard",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -30,16 +30,159 @@
   "liveNow": false,
   "panels": [
     {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Total MongoDB CPU usage percentage across all pods",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "mappings": [],
+          "max": 100,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 75
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 30,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(process_cpu_seconds_total{pod=~\"mongodb.*\"}[1m]) * 100)",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Total MongoDB CPU Usage (%)",
+      "type": "gauge"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Total MongoDB memory usage across all pods",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "decimals": 1,
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 2048
+              },
+              {
+                "color": "red",
+                "value": 3072
+              }
+            ]
+          },
+          "unit": "mibytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 0
+      },
+      "id": 32,
+      "options": {
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdLabels": false,
+        "showThresholdMarkers": true,
+        "text": {}
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(process_resident_memory_bytes{pod=~\"mongodb.*\"}) / 1024 / 1024",
+          "legendFormat": "__auto",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Total MongoDB Memory Usage (MiB)",
+      "type": "gauge"
+    },
+    {
       "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 0
+        "y": 6
       },
       "id": 12,
       "panels": [],
-      "title": "MongoDB System Metrics",
+      "title": "MongoDB Resource Usage",
       "type": "row"
     },
     {
@@ -47,7 +190,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "MongoDB exporter CPU usage percentage",
+      "description": "Overall MongoDB CPU Usage Percentage",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -110,14 +253,15 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 1
+        "y": 7
       },
       "id": 2,
       "options": {
         "legend": {
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -136,13 +280,13 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "rate(process_cpu_seconds_total{job=~\".*mongodb.*\"}[5m]) * 100 or rate(mongodb_exporter_process_cpu_seconds_total{job=~\".*mongodb.*\"}[5m]) * 100",
-          "legendFormat": "{{instance}} - CPU Usage",
+          "expr": "sum by(pod) (rate(process_cpu_seconds_total{pod=~\"mongodb.*\"}[1m])) * 100",
+          "legendFormat": "{{pod}} - CPU %",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "MongoDB CPU Usage (%)",
+      "title": "MongoDB CPU Usage % (Higher is worse)",
       "type": "timeseries"
     },
     {
@@ -150,7 +294,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "MongoDB memory usage in bytes",
+      "description": "MongoDB Memory Usage in MiB",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -196,6 +340,110 @@
               },
               {
                 "color": "yellow",
+                "value": 900
+              },
+              {
+                "color": "red",
+                "value": 1800
+              }
+            ]
+          },
+          "unit": "mibytes"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 7
+      },
+      "id": 4,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by(pod) (process_resident_memory_bytes{pod=~\"mongodb.*\"} / 1024 / 1024)",
+          "legendFormat": "{{pod}} - Memory",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "MongoDB Memory Usage (MiB) (Higher is worse)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "MongoDB Memory Usage as Percentage of Limit",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "mappings": [],
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
                 "value": 70
               },
               {
@@ -204,101 +452,7 @@
               }
             ]
           },
-          "unit": "bytes"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 1
-      },
-      "id": 4,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "9.5.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "process_resident_memory_bytes{job=~\".*mongodb.*\"} or mongodb_exporter_process_resident_memory_bytes{job=~\".*mongodb.*\"}",
-          "legendFormat": "{{instance}} - Memory",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "MongoDB Memory Usage",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "description": "MongoDB connections (current)",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "none"
+          "unit": "percent"
         },
         "overrides": []
       },
@@ -306,14 +460,15 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 9
+        "y": 15
       },
-      "id": 10,
+      "id": 8,
       "options": {
         "legend": {
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -332,25 +487,13 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "mongodb_connections{state=\"current\",job=~\".*mongodb.*\"} or mongodb_mongod_connections{state=\"current\",job=~\".*mongodb.*\"} or mongodb_mongos_connections{state=\"current\",job=~\".*mongodb.*\"}",
-          "legendFormat": "{{instance}} - Current",
+          "expr": "sum by(pod) (process_resident_memory_bytes{pod=~\"mongodb.*\"}) / sum by(pod) (container_spec_memory_limit_bytes{pod=~\"mongodb.*\", container!=\"POD\", container!=\"\"}) * 100",
+          "legendFormat": "{{pod}} - Memory % of Limit",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "mongodb_connections{state=\"available\",job=~\".*mongodb.*\"} or mongodb_mongod_connections{state=\"available\",job=~\".*mongodb.*\"} or mongodb_mongos_connections{state=\"available\",job=~\".*mongodb.*\"}",
-          "hide": false,
-          "legendFormat": "{{instance}} - Available",
-          "range": true,
-          "refId": "B"
         }
       ],
-      "title": "MongoDB Connections",
+      "title": "MongoDB Memory Usage % of Limit (Higher is worse)",
       "type": "timeseries"
     },
     {
@@ -358,7 +501,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "MongoDB database metrics",
+      "description": "Total active MongoDB connections",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -391,7 +534,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "line"
             }
           },
           "mappings": [],
@@ -401,6 +544,14 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 80
+              },
+              {
+                "color": "red",
+                "value": 100
               }
             ]
           },
@@ -412,14 +563,15 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 9
+        "y": 15
       },
-      "id": 18,
+      "id": 10,
       "options": {
         "legend": {
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -438,25 +590,13 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "mongodb_dbstats_collections{job=~\".*mongodb.*\"} or mongodb_mongod_db_collections_total{job=~\".*mongodb.*\"}",
-          "legendFormat": "{{instance}} - {{db}} Collections",
+          "expr": "sum(mongodb_connections{state=\"current\"})",
+          "legendFormat": "Active Connections",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "mongodb_dbstats_indexes{job=~\".*mongodb.*\"} or mongodb_mongod_db_indexes_total{job=~\".*mongodb.*\"}",
-          "hide": false,
-          "legendFormat": "{{instance}} - {{db}} Indexes",
-          "range": true,
-          "refId": "B"
         }
       ],
-      "title": "MongoDB Collections & Indexes",
+      "title": "MongoDB Active Connections",
       "type": "timeseries"
     },
     {
@@ -465,11 +605,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 17
+        "y": 23
       },
       "id": 14,
       "panels": [],
-      "title": "MongoDB Operations",
+      "title": "MongoDB Metrics",
       "type": "row"
     },
     {
@@ -477,7 +617,199 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "MongoDB operation rates",
+      "description": "Total MongoDB Operations Per Second",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ops"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*Inserts.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*Queries.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*Updates.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "orange",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": ".*Deletes.*"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 24
+      },
+      "id": 6,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(mongodb_op_counters_total{type=\"insert\"}[1m]) or vector(0))",
+          "legendFormat": "Inserts/sec",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(mongodb_op_counters_total{type=\"query\"}[1m]) or vector(0))",
+          "hide": false,
+          "legendFormat": "Queries/sec",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(mongodb_op_counters_total{type=\"update\"}[1m]) or vector(0))",
+          "hide": false,
+          "legendFormat": "Updates/sec",
+          "range": true,
+          "refId": "C"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(mongodb_op_counters_total{type=\"delete\"}[1m]) or vector(0))",
+          "hide": false,
+          "legendFormat": "Deletes/sec",
+          "range": true,
+          "refId": "D"
+        }
+      ],
+      "title": "MongoDB Operations Per Second",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "MongoDB Network Traffic",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -508,6 +840,228 @@
             "stacking": {
               "group": "A",
               "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 24
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(mongodb_network_bytes_total{state=\"in\"}[1m]) or vector(0))",
+          "legendFormat": "Network in",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum(rate(mongodb_network_bytes_total{state=\"out\"}[1m]) or vector(0))",
+          "hide": false,
+          "legendFormat": "Network out",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "MongoDB Network Traffic",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "MongoDB Average Operation Latency",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "line+area"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 50
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 32
+      },
+      "id": 18,
+      "options": {
+        "legend": {
+          "calcs": [
+            "mean",
+            "max",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "avg(mongodb_mongod_op_latencies_latency_total{type=\"read\"} / (mongodb_mongod_op_latencies_ops_total{type=\"read\"} > 0) / 1000)",
+          "legendFormat": "Read Latency",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "avg(mongodb_mongod_op_latencies_latency_total{type=\"write\"} / (mongodb_mongod_op_latencies_ops_total{type=\"write\"} > 0) / 1000)",
+          "hide": false,
+          "legendFormat": "Write Latency",
+          "range": true,
+          "refId": "B"
+        }
+      ],
+      "title": "MongoDB Operation Latency (ms) (Higher is worse)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "MongoDB Document Change Rate",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -530,15 +1084,16 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 18
+        "x": 12,
+        "y": 32
       },
-      "id": 6,
+      "id": 20,
       "options": {
         "legend": {
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -557,8 +1112,8 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "rate(mongodb_op_counters_total{type=\"insert\",job=~\".*mongodb.*\"} or mongodb_mongod_op_counters_total{type=\"insert\",job=~\".*mongodb.*\"}[5m])",
-          "legendFormat": "{{instance}} - Inserts",
+          "expr": "sum(rate(mongodb_metrics_document_total{state=\"inserted\"}[1m]) or vector(0))",
+          "legendFormat": "Inserted/sec",
           "range": true,
           "refId": "A"
         },
@@ -568,9 +1123,9 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "rate(mongodb_op_counters_total{type=\"query\",job=~\".*mongodb.*\"} or mongodb_mongod_op_counters_total{type=\"query\",job=~\".*mongodb.*\"}[5m])",
+          "expr": "sum(rate(mongodb_metrics_document_total{state=\"updated\"}[1m]) or vector(0))",
           "hide": false,
-          "legendFormat": "{{instance}} - Queries",
+          "legendFormat": "Updated/sec",
           "range": true,
           "refId": "B"
         },
@@ -580,132 +1135,14 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "rate(mongodb_op_counters_total{type=\"update\",job=~\".*mongodb.*\"} or mongodb_mongod_op_counters_total{type=\"update\",job=~\".*mongodb.*\"}[5m])",
+          "expr": "sum(rate(mongodb_metrics_document_total{state=\"deleted\"}[1m]) or vector(0))",
           "hide": false,
-          "legendFormat": "{{instance}} - Updates",
+          "legendFormat": "Deleted/sec",
           "range": true,
           "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "rate(mongodb_op_counters_total{type=\"delete\",job=~\".*mongodb.*\"} or mongodb_mongod_op_counters_total{type=\"delete\",job=~\".*mongodb.*\"}[5m])",
-          "hide": false,
-          "legendFormat": "{{instance}} - Deletes",
-          "range": true,
-          "refId": "D"
         }
       ],
-      "title": "MongoDB Operation Rates",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "description": "MongoDB network traffic",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "spanNulls": true,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              }
-            ]
-          },
-          "unit": "binbps"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 18
-      },
-      "id": 16,
-      "options": {
-        "legend": {
-          "calcs": [
-            "mean",
-            "max"
-          ],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "9.5.2",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "rate(mongodb_network_bytes_total{state=\"in\",job=~\".*mongodb.*\"} or mongodb_mongod_network_bytes_total{state=\"in\",job=~\".*mongodb.*\"}[5m]) * 8",
-          "legendFormat": "{{instance}} - In",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "rate(mongodb_network_bytes_total{state=\"out\",job=~\".*mongodb.*\"} or mongodb_mongod_network_bytes_total{state=\"out\",job=~\".*mongodb.*\"}[5m]) * 8",
-          "hide": false,
-          "legendFormat": "{{instance}} - Out",
-          "range": true,
-          "refId": "B"
-        }
-      ],
-      "title": "MongoDB Network Traffic",
+      "title": "MongoDB Document Change Rate",
       "type": "timeseries"
     },
     {
@@ -714,11 +1151,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 26
+        "y": 40
       },
-      "id": 20,
+      "id": 22,
       "panels": [],
-      "title": "MongoDB Storage",
+      "title": "MongoDB Storage Analysis",
       "type": "row"
     },
     {
@@ -726,7 +1163,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "MongoDB storage statistics",
+      "description": "MongoDB database storage size",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -780,14 +1217,15 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 27
+        "y": 41
       },
-      "id": 22,
+      "id": 24,
       "options": {
         "legend": {
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -806,25 +1244,13 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "mongodb_dbstats_dataSize{job=~\".*mongodb.*\"} or mongodb_mongod_db_data_size_bytes{job=~\".*mongodb.*\"}",
-          "legendFormat": "{{instance}} - {{db}} Data",
+          "expr": "sum by(db) (mongodb_dbstats_dataSize)",
+          "legendFormat": "{{db}} Data Size",
           "range": true,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "mongodb_dbstats_storageSize{job=~\".*mongodb.*\"} or mongodb_mongod_db_storage_size_bytes{job=~\".*mongodb.*\"}",
-          "hide": false,
-          "legendFormat": "{{instance}} - {{db}} Storage",
-          "range": true,
-          "refId": "B"
         }
       ],
-      "title": "MongoDB Storage Size",
+      "title": "MongoDB Data Size by Database",
       "type": "timeseries"
     },
     {
@@ -832,7 +1258,7 @@
         "type": "prometheus",
         "uid": "prometheus"
       },
-      "description": "MongoDB Document Count",
+      "description": "MongoDB page faults per second - High values indicate memory pressure",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -865,7 +1291,7 @@
               "mode": "none"
             },
             "thresholdsStyle": {
-              "mode": "off"
+              "mode": "line"
             }
           },
           "mappings": [],
@@ -875,9 +1301,18 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 50
               }
             ]
-          }
+          },
+          "unit": "ops"
         },
         "overrides": []
       },
@@ -885,14 +1320,15 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 27
+        "y": 41
       },
-      "id": 24,
+      "id": 26,
       "options": {
         "legend": {
           "calcs": [
             "mean",
-            "max"
+            "max",
+            "lastNotNull"
           ],
           "displayMode": "table",
           "placement": "bottom",
@@ -911,17 +1347,17 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "mongodb_dbstats_objects{job=~\".*mongodb.*\"} or mongodb_mongod_db_objects{job=~\".*mongodb.*\"}",
-          "legendFormat": "{{instance}} - {{db}} Documents",
+          "expr": "sum(rate(mongodb_extra_info_page_faults_total[1m]))",
+          "legendFormat": "Page Faults/sec",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "MongoDB Document Count",
+      "title": "MongoDB Page Faults (Higher indicates memory pressure)",
       "type": "timeseries"
     }
   ],
-  "refresh": "30s",
+  "refresh": "10s",
   "schemaVersion": 38,
   "style": "dark",
   "tags": [
@@ -932,10 +1368,34 @@
     "list": []
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-1h",
     "to": "now"
   },
-  "timepicker": {},
+  "timepicker": {
+    "refresh_intervals": [
+      "5s",
+      "10s",
+      "30s",
+      "1m",
+      "5m",
+      "15m",
+      "30m",
+      "1h",
+      "2h",
+      "1d"
+    ],
+    "time_options": [
+      "5m",
+      "15m",
+      "1h",
+      "6h",
+      "12h",
+      "24h",
+      "2d",
+      "7d",
+      "30d"
+    ]
+  },
   "timezone": "",
   "title": "MongoDB Performance",
   "uid": "mongodb-performance",
