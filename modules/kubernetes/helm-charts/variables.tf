@@ -104,3 +104,26 @@ variable "cert_manager_values" {
   type        = map(any)
   default     = {}
 }
+variable "mongodb_autoscaling_enabled" {
+  description = "Enable autoscaling for MongoDB"
+  type        = bool
+  default     = false
+}
+
+variable "mongodb_min_replicas" {
+  description = "Minimum MongoDB replicas"
+  type        = number
+  default     = 3
+}
+
+variable "mongodb_max_replicas" {
+  description = "Maximum MongoDB replicas"
+  type        = number
+  default     = 7
+}
+
+variable "mongodb_target_cpu_percentage" {
+  description = "Target CPU utilization percentage for autoscaling"
+  type        = number
+  default     = 70
+}

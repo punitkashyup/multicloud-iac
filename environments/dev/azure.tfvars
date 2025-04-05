@@ -50,6 +50,13 @@ mongodb_values = {
   "persistence.size" = "50Gi"
   "metrics.enabled" = "true"
 }
+mongodb_autoscaling_enabled     = true
+mongodb_min_replicas            = 3
+mongodb_max_replicas            = 7
+mongodb_target_cpu_percentage   = 70
+mongodb_connection_threshold    = 500  # Scale based on connection count
+mongodb_storage_autoscaling     = true
+mongodb_max_storage             = "10Gi"
 
 # Kafka Configuration
 kafka_enabled = true

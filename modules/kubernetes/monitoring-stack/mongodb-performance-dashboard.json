@@ -21,7 +21,7 @@
       }
     ]
   },
-  "description": "MongoDB Performance Dashboard",
+  "description": "MongoDB Performance Dashboard with Alerts and Auto-scaling",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
@@ -29,6 +29,267 @@
   "links": [],
   "liveNow": false,
   "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 100,
+      "panels": [],
+      "title": "MongoDB Status & Alerts",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "Current active MongoDB alerts",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Value"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "alertname"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Alert"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "severity"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Severity"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "critical": {
+                        "color": "red",
+                        "index": 2
+                      },
+                      "warning": {
+                        "color": "orange",
+                        "index": 1
+                      },
+                      "info": {
+                        "color": "blue",
+                        "index": 0
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 0,
+        "y": 1
+      },
+      "id": 102,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Severity"
+          }
+        ]
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "ALERTS{alertname=~\"MongoDB.*\", alertstate=\"firing\"}",
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "Active MongoDB Alerts",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "MongoDB auto-scaling events",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "scaling_action"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Action"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-text"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "scale_up": {
+                        "color": "blue",
+                        "index": 0
+                      },
+                      "scale_down": {
+                        "color": "purple",
+                        "index": 1
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 12,
+        "x": 12,
+        "y": 1
+      },
+      "id": 104,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "ALERTS{alertname=~\"MongoDB.*\", scaling_action=~\"scale_.*\"}",
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "A"
+        }
+      ],
+      "title": "MongoDB Auto-scaling Events",
+      "type": "table"
+    },
     {
       "datasource": {
         "type": "prometheus",
@@ -68,7 +329,7 @@
         "h": 6,
         "w": 12,
         "x": 0,
-        "y": 0
+        "y": 7
       },
       "id": 30,
       "options": {
@@ -139,7 +400,7 @@
         "h": 6,
         "w": 12,
         "x": 12,
-        "y": 0
+        "y": 7
       },
       "id": 32,
       "options": {
@@ -178,7 +439,225 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 13
+      },
+      "id": 106,
+      "panels": [],
+      "title": "Auto-scaling Metrics",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "MongoDB replica count",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "area"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "rgba(115, 191, 105, 0.2)",
+                "value": null
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.2)",
+                "value": 5
+              }
+            ]
+          },
+          "unit": "none"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 14
+      },
+      "id": 108,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "count(kube_pod_info{namespace=\"mongodb\", pod=~\"mongodb-.*\"}) or vector(0)",
+          "legendFormat": "Active Replicas",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "MongoDB Active Replicas",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "MongoDB connection utilization percentage (against max connections)",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "never",
+            "spanNulls": true,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "area"
+            }
+          },
+          "mappings": [],
+          "max": 100,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "rgba(237, 129, 40, 0.2)",
+                "value": 70
+              },
+              {
+                "color": "rgba(245, 54, 54, 0.2)",
+                "value": 85
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "id": 110,
+      "options": {
+        "legend": {
+          "calcs": [
+            "min",
+            "max",
+            "mean",
+            "lastNotNull"
+          ],
+          "displayMode": "table",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "9.5.2",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "(sum(mongodb_connections{state=\"current\"}) / sum(mongodb_connections{state=\"available\"}) * 100) or vector(0)",
+          "legendFormat": "Connection Usage",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "MongoDB Connection Utilization % (Scale-up Trigger)",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 22
       },
       "id": 12,
       "panels": [],
@@ -253,7 +732,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 7
+        "y": 23
       },
       "id": 2,
       "options": {
@@ -356,7 +835,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 7
+        "y": 23
       },
       "id": 4,
       "options": {
@@ -460,7 +939,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 15
+        "y": 31
       },
       "id": 8,
       "options": {
@@ -563,7 +1042,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 15
+        "y": 31
       },
       "id": 10,
       "options": {
@@ -605,7 +1084,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 39
       },
       "id": 14,
       "panels": [],
@@ -732,7 +1211,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 24
+        "y": 40
       },
       "id": 6,
       "options": {
@@ -863,7 +1342,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 24
+        "y": 40
       },
       "id": 16,
       "options": {
@@ -978,7 +1457,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 32
+        "y": 48
       },
       "id": 18,
       "options": {
@@ -1085,7 +1564,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 32
+        "y": 48
       },
       "id": 20,
       "options": {
@@ -1151,7 +1630,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 40
+        "y": 56
       },
       "id": 22,
       "panels": [],
@@ -1217,7 +1696,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 41
+        "y": 57
       },
       "id": 24,
       "options": {
@@ -1320,7 +1799,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 41
+        "y": 57
       },
       "id": 26,
       "options": {
@@ -1355,6 +1834,45 @@
       ],
       "title": "MongoDB Page Faults (Higher indicates memory pressure)",
       "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 65
+      },
+      "id": 112,
+      "panels": [],
+      "title": "Auto-Scaling Alert Rules",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "description": "List of MongoDB alerts configured in Prometheus",
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 66
+      },
+      "id": 114,
+      "options": {
+        "code": {
+          "language": "json",
+          "showLineNumbers": true,
+          "showMiniMap": false
+        },
+        "content": "# MongoDB Auto-Scaling Alert Rules\n\n## Connection Count Alert (Scale-Up Trigger)\n```yaml\n- alert: MongoDBHighConnectionCount\n  expr: sum(mongodb_connections{state=\"current\"}) / sum(mongodb_connections{state=\"available\"}) * 100 > 70\n  for: 5m\n  labels:\n    severity: warning\n    scaling_action: scale_up\n  annotations:\n    summary: MongoDB connection count high\n    description: MongoDB connection count is above 70% of capacity for 5 minutes.\n```\n\n## Sustained High CPU Alert (Scale-Up Trigger)\n```yaml\n- alert: MongoDBHighCPUUsage\n  expr: sum(rate(process_cpu_seconds_total{pod=~\"mongodb.*\"}[5m]) * 100) > 70\n  for: 5m\n  labels:\n    severity: warning\n    scaling_action: scale_up\n  annotations:\n    summary: MongoDB high CPU usage\n    description: MongoDB CPU usage is above 70% for 5 minutes.\n```\n\n## Operation Latency Alert (Scale-Up Trigger)\n```yaml\n- alert: MongoDBHighOperationLatency\n  expr: avg(mongodb_mongod_op_latencies_latency_total{type=\"write\"} / (mongodb_mongod_op_latencies_ops_total{type=\"write\"} > 0) / 1000) > 100\n  for: 5m\n  labels:\n    severity: warning\n    scaling_action: scale_up\n  annotations:\n    summary: MongoDB high operation latency\n    description: MongoDB write operations latency is above 100ms for 5 minutes.\n```\n\n## Low Utilization Alert (Scale-Down Opportunity)\n```yaml\n- alert: MongoDBLowUtilization\n  expr: sum(rate(process_cpu_seconds_total{pod=~\"mongodb.*\"}[1h]) * 100) < 20 and count(kube_pod_info{namespace=\"mongodb\", pod=~\"mongodb-.*\"}) > 3\n  for: 30m\n  labels:\n    severity: info\n    scaling_action: scale_down\n  annotations:\n    summary: MongoDB low utilization\n    description: MongoDB CPU usage has been below 20% for 30 minutes with more than 3 replicas.\n```",
+        "mode": "markdown"
+      },
+      "pluginVersion": "9.5.2",
+      "title": "MongoDB Auto-Scaling Alert Rules Configuration",
+      "type": "text"
     }
   ],
   "refresh": "10s",
@@ -1362,7 +1880,8 @@
   "style": "dark",
   "tags": [
     "mongodb",
-    "database"
+    "database",
+    "auto-scaling"
   ],
   "templating": {
     "list": []
@@ -1397,8 +1916,8 @@
     ]
   },
   "timezone": "",
-  "title": "MongoDB Performance",
+  "title": "MongoDB Performance & Auto-scaling",
   "uid": "mongodb-performance",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }

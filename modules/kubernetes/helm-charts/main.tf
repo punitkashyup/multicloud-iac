@@ -189,6 +189,30 @@ resource "helm_release" "mongodb" {
   }
 }
 
+resource "kubernetes_horizontal_pod_autoscaler" "mongodb" {
+  count = var.mongodb_enabled && var.mongodb_autoscaling_enabled ? 1 : 0
+
+  metadata {
+    name      = "mongodb"
+    namespace = var.mongodb_namespace
+  }
+
+  spec {
+    max_replicas = var.mongodb_max_replicas
+    min_replicas = var.mongodb_min_replicas
+    
+    target_cpu_utilization_percentage = var.mongodb_target_cpu_percentage
+    
+    scale_target_ref {
+      api_version = "apps/v1"
+      kind        = "StatefulSet"
+      name        = "mongodb"
+    }
+  }
+
+  depends_on = [helm_release.mongodb]
+}
+
 # Add Kafka Helm release
 resource "helm_release" "kafka" {
   count      = var.kafka_enabled ? 1 : 0
